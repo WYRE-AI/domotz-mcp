@@ -101,12 +101,14 @@ jobs:
           tags: |
             type=sha
             type=raw,value=latest
-            type=raw,value=${{ needs.release.outputs.version }}
       - uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
   mcp-registry:
