@@ -7,9 +7,11 @@ on:
     branches: [main]
 
 # Thin caller for the canonical reusable release pipeline. The release →
-# Docker → MCP Registry → security chain (with tag-based release detection and
-# correct gating) lives in wyre-technology/.github so every *-mcp repo stays in
-# lockstep instead of drifting per-repo.
+# Docker → MCP Registry → security chain (tag-based release detection, correct
+# gating) lives in wyre-technology/.github so every *-mcp repo stays in lockstep
+# instead of drifting per-repo. Caller jobs grant the token scopes the reusable
+# workflows' internal jobs request (reusables can only reduce, never expand,
+# the caller-granted permissions).
 jobs:
   test:
     uses: wyre-technology/.github/.github/workflows/mcp-server-ci.yml@198605d0575e27374cf9b67fba3aa8c7b91de2c0
@@ -20,6 +22,12 @@ jobs:
 
   release:
     needs: test
+    permissions:
+      contents: write        # semantic-release pushes tags + creates releases
+      issues: write          # @semantic-release/github
+      packages: write        # docker push to GHCR
+      id-token: write         # MCP Registry OIDC publish
+      security-events: write  # Trivy SARIF upload
     uses: wyre-technology/.github/.github/workflows/mcp-server-release.yml@198605d0575e27374cf9b67fba3aa8c7b91de2c0
     with:
       server-name: domotz-mcp
@@ -29,6 +37,9 @@ jobs:
   deploy:
     needs: release
     if: needs.release.outputs.released == 'true'
+    permissions:
+      id-token: write   # Azure OIDC login
+      contents: read
     uses: wyre-technology/.github/.github/workflows/mcp-server-deploy.yml@198605d0575e27374cf9b67fba3aa8c7b91de2c0
     with:
       vendor-slug: domotz
