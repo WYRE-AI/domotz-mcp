@@ -21,7 +21,7 @@ jobs:
       packages: write         # docker push to GHCR
       id-token: write         # MCP Registry OIDC publish
       security-events: write  # Trivy SARIF upload
-    uses: wyre-technology/.github/.github/workflows/mcp-server-release.yml@198605d0575e27374cf9b67fba3aa8c7b91de2c0
+    uses: wyre-technology/.github/.github/workflows/mcp-server-release.yml@7794e75666ac4956274f7a7d25dabacd56c96bbc
     with:
       server-name: domotz-mcp
       image-name: ghcr.io/wyre-technology/domotz-mcp
@@ -33,7 +33,7 @@ jobs:
     permissions:
       id-token: write   # Azure OIDC login
       contents: read
-    uses: wyre-technology/.github/.github/workflows/mcp-server-deploy.yml@198605d0575e27374cf9b67fba3aa8c7b91de2c0
+    uses: wyre-technology/.github/.github/workflows/mcp-server-deploy.yml@7794e75666ac4956274f7a7d25dabacd56c96bbc
     with:
       vendor-slug: domotz
       image-name: ghcr.io/wyre-technology/domotz-mcp
