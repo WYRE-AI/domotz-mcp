@@ -1,5 +1,5 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { DomainName, NavigationState } from '../utils/types.js';
+import type { NavigationState } from '../utils/types.js';
 
 const sessionStates = new Map<string, NavigationState>();
 
