@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getCredentials, getBaseUrl, domotzRequest } from '../utils/client.js';
+import { getCredentials, runWithCredentials, getBaseUrl, domotzRequest } from '../utils/client.js';
 
 // getCredentials / domotzRequest read process.env at call time, so each test
 // starts from a clean slate and the originals are restored afterwards.
@@ -31,6 +31,59 @@ function fakeResponse(body: unknown, ok = true, status = 200): Response {
     text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)),
   } as unknown as Response;
 }
+
+describe('request-scoped credentials (AsyncLocalStorage)', () => {
+  it('prefers ALS-scoped creds over process.env', () => {
+    process.env.DOMOTZ_API_KEY = 'env-key';
+    process.env.DOMOTZ_REGION = 'eu-west-1';
+    expect(getCredentials()).toEqual({ apiKey: 'env-key', region: 'eu-west-1' });
+
+    runWithCredentials({ apiKey: 'scoped-key', region: 'ap-southeast-1' }, () => {
+      expect(getCredentials()).toEqual({ apiKey: 'scoped-key', region: 'ap-southeast-1' });
+    });
+
+    // scope must not leak out
+    expect(getCredentials()).toEqual({ apiKey: 'env-key', region: 'eu-west-1' });
+  });
+
+  it('returns null when neither scope nor env is set', () => {
+    expect(getCredentials()).toBeNull();
+  });
+
+  it('returns null for partial scoped creds (missing region)', () => {
+    process.env.DOMOTZ_API_KEY = 'env-key';
+    // Directly test the AND guard: a store with only apiKey, no region
+    // TypeScript won't allow partial Credentials, so we cast.
+    const partial = { apiKey: 'scoped-key' } as { apiKey: string; region: string };
+    runWithCredentials(partial, () => {
+      // The guard requires BOTH fields; partial should fall through to env
+      const creds = getCredentials();
+      expect(creds?.apiKey).toBe('env-key');
+    });
+  });
+
+  it('does not contaminate a concurrent request with another tenants credentials', async () => {
+    const results: Array<{ apiKey: string; region: string } | null> = [];
+
+    await Promise.all([
+      runWithCredentials({ apiKey: 'tenant-A', region: 'us-east-1' }, async () => {
+        await new Promise(r => setTimeout(r, 10));
+        results.push(getCredentials());
+      }),
+      runWithCredentials({ apiKey: 'tenant-B', region: 'eu-west-1' }, async () => {
+        await new Promise(r => setTimeout(r, 5));
+        results.push(getCredentials());
+      }),
+    ]);
+
+    // Both reads must resolve to their own tenant's creds with no cross-contamination
+    expect(results).toHaveLength(2);
+    const keyA = results.find(r => r?.apiKey === 'tenant-A');
+    const keyB = results.find(r => r?.apiKey === 'tenant-B');
+    expect(keyA).toEqual({ apiKey: 'tenant-A', region: 'us-east-1' });
+    expect(keyB).toEqual({ apiKey: 'tenant-B', region: 'eu-west-1' });
+  });
+});
 
 describe('getCredentials', () => {
   it('returns null when DOMOTZ_API_KEY is unset', () => {
@@ -77,6 +130,21 @@ describe('domotzRequest', () => {
     expect(url).toBe('https://api-us-east-1-cell-1.domotz.com/public-api/v1/agent');
     expect((init.headers as Record<string, string>)['X-Api-Key']).toBe('secret');
     expect(init.method).toBe('GET');
+  });
+
+  it('uses ALS-scoped credentials rather than process.env for the request', async () => {
+    process.env.DOMOTZ_API_KEY = 'env-key';
+    process.env.DOMOTZ_REGION = 'us-east-1';
+    const fetchMock = vi.fn().mockResolvedValue(fakeResponse([]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await runWithCredentials({ apiKey: 'scoped-key', region: 'eu-west-1' }, async () => {
+      await domotzRequest('/agent');
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>)['X-Api-Key']).toBe('scoped-key');
+    expect(url).toContain('eu-west-1');
   });
 
   it('appends defined query params and skips undefined ones', async () => {
