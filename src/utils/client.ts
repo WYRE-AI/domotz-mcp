@@ -1,11 +1,23 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { logger } from './logger.js';
 
-export interface DomotzCredentials {
+export interface Credentials {
   apiKey: string;
   region: string;
 }
 
-export function getCredentials(): DomotzCredentials | null {
+// Request-scoped credential store. In gateway mode the HTTP layer runs each
+// request inside runWithCredentials({apiKey, region}); getCredentials() reads it.
+// Falls back to process.env for stdio/single-tenant mode.
+const credStore = new AsyncLocalStorage<Credentials>();
+
+export function runWithCredentials<T>(creds: Credentials, fn: () => T): T {
+  return credStore.run(creds, fn);
+}
+
+export function getCredentials(): Credentials | null {
+  const scoped = credStore.getStore();
+  if (scoped?.apiKey && scoped?.region) return scoped;
   const apiKey = process.env.DOMOTZ_API_KEY;
   if (!apiKey) {
     logger.warn('Missing DOMOTZ_API_KEY');
