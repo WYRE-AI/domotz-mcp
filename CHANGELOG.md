@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- `/health` liveness endpoint now returns an unconditional `200` instead of gating on request-scoped credentials. The Azure Container Apps liveness probe carries no credentials, so the credential gate introduced with the AsyncLocalStorage security fix (#40) made `/health` return `503`, causing ACA to crash-loop the container (ContainerBackOff). Credential state is still reported in the response body (`credentials.configured`), and the `/mcp` request-scoped credential isolation is unchanged.
+
 ## [1.0.4](https://github.com/wyre-technology/domotz-mcp/compare/v1.0.3...v1.0.4) (2026-04-07)
 
 
