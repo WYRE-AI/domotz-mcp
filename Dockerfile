@@ -1,11 +1,11 @@
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS production
+FROM node:26-alpine AS production
 # OCI label links the GHCR package to this repository,
 # enabling GITHUB_TOKEN write access from Actions workflows.
 LABEL org.opencontainers.image.source="https://github.com/wyre-technology/domotz-mcp"
