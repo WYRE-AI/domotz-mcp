@@ -18,10 +18,11 @@ jobs:
     permissions:
       contents: write         # semantic-release pushes tags + creates releases
       issues: write           # @semantic-release/github
+      pull-requests: write
       packages: write         # docker push to GHCR
       id-token: write         # MCP Registry OIDC publish
       security-events: write  # Trivy SARIF upload
-    uses: wyre-technology/.github/.github/workflows/mcp-server-release.yml@a925b43adb22aa8885b8243e1056e6a42cdce4d1
+    uses: wyre-technology/.github/.github/workflows/mcp-server-release.yml@d28a612a00a1bd0c36aff09e686ce2d1e10ef552
     with:
       server-name: domotz-mcp
       image-name: ghcr.io/wyre-technology/domotz-mcp
