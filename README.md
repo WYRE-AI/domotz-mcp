@@ -12,7 +12,7 @@ This is a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) serve
 ## Installation
 
 ```bash
-npm install @wyre-technology/domotz-mcp
+npm install @wyre-ai/domotz-mcp
 ```
 
 ## Configuration
@@ -36,7 +36,7 @@ Add to your Claude Desktop `claude_desktop_config.json`:
   "mcpServers": {
     "domotz-mcp": {
       "command": "npx",
-      "args": ["@wyre-technology/domotz-mcp"],
+      "args": ["@wyre-ai/domotz-mcp"],
       "env": {
         "DOMOTZ_API_KEY": "your-domotz-api-key"
       }
@@ -50,7 +50,7 @@ Add to your Claude Desktop `claude_desktop_config.json`:
 ```bash
 claude mcp add domotz-mcp \
   -e DOMOTZ_API_KEY=your-value \
-  -- npx -y @wyre-technology/domotz-mcp
+  -- npx -y @wyre-ai/domotz-mcp
 ```
 
 ### Docker
@@ -87,7 +87,7 @@ Power management for managed devices
 
 ```bash
 # Clone the repository
-git clone https://github.com/wyre-technology/domotz-mcp.git
+git clone https://github.com/WYRE-AI/domotz-mcp.git
 cd domotz-mcp
 
 # Install dependencies
