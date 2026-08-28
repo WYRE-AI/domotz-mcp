@@ -63,7 +63,7 @@ export function createServer(): Server {
 
     if (!state.currentDomain) {
       return {
-        content: [{ type: 'text' as const, text: `Unknown tool: ${name}. Use domotz_navigate first.` }],
+        content: [{ type: 'text' as const, text: `Unknown tool: ${name}. Call conduit__my_access to see which tools are available to you.` }],
         isError: true,
       };
     }
